@@ -372,6 +372,9 @@ class ModelCLI:
         """马后炮：复盘逻辑委托给 ModelReviewHelper"""
         self.reviewer.review()
 
+    def backtest(self):
+        self.reviewer.backtest()
+
     def compress_mlruns(self):
         """调用独立的备份助手进行压缩"""
         _compress_mlruns(self.kwargs["provider_uri"])

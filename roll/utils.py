@@ -240,7 +240,7 @@ def get_local_data_date(provider_uri):
     _, stdout, _ = run_command(f"tail -n 1 {provider_uri}/calendars/day.txt")
     return stdout
 
-def get_trade_data(provider_uri):
+def get_trade_date(provider_uri):
     _, stdout, _ = run_command(f"cat {provider_uri}/calendars/day.txt")
     return stdout.split("\n")
 

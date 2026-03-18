@@ -5,7 +5,7 @@ from typing import Dict
 import pandas as pd
 from loguru import logger
 
-from utils import append_to_file, get_trade_data
+from utils import append_to_file, get_trade_date
 
 
 class ModelReviewHelper:
@@ -91,11 +91,8 @@ class ModelReviewHelper:
         return df
 
     # ---------- 遍历单日子目录 ----------
-    def _review_subdir(self, subdir: Path):
-        print(f"- {subdir.name}")
-        self.review_result_string += f"## {subdir.name}\n"
-
-        date_str = next(
+    def _extract_date_from_csv_name(self, subdir: Path):
+        return next(
             (
                 re.match(r"(\d{4}-\d{2}-\d{2})_.*\.csv", file.name).group(1)
                 for file in subdir.iterdir()
@@ -103,18 +100,24 @@ class ModelReviewHelper:
             ),
             None,
         )
+
+    def _review_subdir(self, subdir: Path):
+        print(f"- {subdir.name}")
+        self.review_result_string += f"## {subdir.name}\n"
+
+        date_str = self._extract_date_from_csv_name(subdir)
         if date_str:
             print(f"直接从文件名提取的日期: {date_str}")
         else:
             print("未发现格式为 xxxx-xx-xx_ 的 CSV 文件名")
 
-        trade_data_list = get_trade_data(self.kwargs.get("provider_uri"))
+        trade_date_list = get_trade_date(self.kwargs.get("provider_uri"))
         if not date_str:
             logger.info(f"{subdir.name} 未提取到有效日期，不能复盘")
             self.review_result_string += f"\n{subdir.name} 未提取到有效日期，不能复盘\n"
             return
 
-        if not trade_data_list:
+        if not trade_date_list:
             logger.info(f"{subdir.name} 交易日日历为空，不能复盘 {date_str}")
             self.review_result_string += (
                 f"\n{subdir.name} 交易日日历为空，不能复盘 {date_str}\n"
@@ -122,7 +125,7 @@ class ModelReviewHelper:
             return
 
         try:
-            idx = trade_data_list.index(date_str)
+            idx = trade_date_list.index(date_str)
         except ValueError:
             logger.info(f"{subdir.name} 日期 {date_str} 不在交易日日历中，不能复盘")
             self.review_result_string += (
@@ -131,15 +134,15 @@ class ModelReviewHelper:
             return
 
         # 复盘依赖下一个与下下个交易日，任一缺失都不执行复盘。
-        if idx + 2 >= len(trade_data_list):
+        if idx + 2 >= len(trade_date_list):
             logger.info(f"还不能复盘 {date_str}")
             self.review_result_string += (
                 f"\n{subdir.name} 还不能复盘 {date_str}（后续交易日不足）\n"
             )
             return
 
-        next1_date = trade_data_list[idx + 1]
-        next2_date = trade_data_list[idx + 2]
+        next1_date = trade_date_list[idx + 1]
+        next2_date = trade_date_list[idx + 2]
 
         logger.info(
             f"开始复盘 {date_str if date_str else '[未知日期]'}  "
@@ -248,3 +251,13 @@ class ModelReviewHelper:
         self.save_review_result()
         logger.info("review result saved to ../review_csv")
 
+    def backtest(self):
+        sorted_subdirs = self._get_review_subdirs()
+        if sorted_subdirs is None:
+            return
+        date_list = [self._extract_date_from_csv_name(sorted_subdirs[-1]), self._extract_date_from_csv_name(sorted_subdirs[0])]
+        logger.info(f"backtest data list: {date_list}")
+
+        trade_date_list = get_trade_date(self.kwargs.get("provider_uri"))
+        idx_s = trade_date_list.index(date_list[0])
+        idx_e = trade_date_list.index(date_list[1])
