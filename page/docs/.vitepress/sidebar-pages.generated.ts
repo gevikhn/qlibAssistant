@@ -19,10 +19,12 @@ export const pagesSidebar = {
   '/pages/docs/': [
     { text: '文档', link: '/pages/docs/' },
     { text: '示例子页', link: '/pages/docs/example' },
+    { text: 'qlibAssistant 可用性分析', link: '/pages/docs/usability' },
   ],
   '/qlibAssistant/pages/docs/': [
     { text: '文档', link: '/pages/docs/' },
     { text: '示例子页', link: '/pages/docs/example' },
+    { text: 'qlibAssistant 可用性分析', link: '/pages/docs/usability' },
   ],
   '/pages/essays/': [
     { text: '随笔', link: '/pages/essays/' },
